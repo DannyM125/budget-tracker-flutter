@@ -1,3 +1,4 @@
+import 'package:budget_app/utils/category.dart';
 import 'package:flutter/material.dart';
 import 'color_utils.dart';
 import 'package:intl/intl.dart';
@@ -7,21 +8,26 @@ void showAddTransferDialog(
   BuildContext context,
   TextEditingController nameController,
   TextEditingController amountController,
-  TextEditingController categoryController,
+  Category? selectedCategory, // Change from String? to Category?
   DateTime? selectedDate,
   String transactionType,
   Function(String) onTransactionTypeChanged,
   Function(DateTime) onDateSelected,
-  Function(String, double, String, DateTime, String) onAddTransaction,
+  Function(String, double, Category, DateTime, String) onAddTransaction, // Change String to Category
 ) {
   // Reset controllers
   nameController.clear();
   amountController.clear();
-  categoryController.clear();
   
   // Set default date to today if not already set
   DateTime date = selectedDate ?? DateTime.now();
-
+  
+  // Create a local variable to track transaction type inside the dialog
+  String localTransactionType = transactionType;
+  
+  // Predefined category list
+  List<Category> categories = Category.getInstance();
+  
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -42,23 +48,40 @@ void showAddTransferDialog(
                     decoration: const InputDecoration(labelText: 'Amount'),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  TextField(
-                    controller: categoryController,
-                    decoration: const InputDecoration(labelText: 'Category'),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Text('Category: '),
+                      DropdownButton<Category>(
+                        value: selectedCategory ?? categories.first, // Default to first category
+                        items: categories.map((Category category) {
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Text(category.name),
+                          );
+                        }).toList(),
+                        onChanged: (Category? value) {
+                          setState(() {
+                            selectedCategory = value;
+                          });
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
                       const Text('Transaction Type: '),
                       DropdownButton<String>(
-                        value: transactionType,
+                        value: localTransactionType,
                         items: const [
                           DropdownMenuItem(value: 'Deposit', child: Text('Deposit')),
                           DropdownMenuItem(value: 'Withdrawal', child: Text('Withdrawal')),
                         ],
                         onChanged: (value) {
                           setState(() {
-                            onTransactionTypeChanged(value!);
+                            localTransactionType = value!;
+                            onTransactionTypeChanged(value);
                           });
                         },
                       ),
@@ -105,7 +128,7 @@ void showAddTransferDialog(
                   // Validate inputs
                   if (nameController.text.isEmpty ||
                       amountController.text.isEmpty ||
-                      categoryController.text.isEmpty) {
+                      selectedCategory == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Please fill in all fields')),
                     );
@@ -127,9 +150,9 @@ void showAddTransferDialog(
                   onAddTransaction(
                     nameController.text,
                     amount,
-                    categoryController.text,
+                    selectedCategory!,
                     date,
-                    transactionType,
+                    localTransactionType,
                   );
 
                   Navigator.of(context).pop();

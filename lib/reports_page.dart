@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'utils/color_utils.dart';
 import 'utils/transactions.dart';
+import 'utils/category.dart';  // Add the Category import
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -14,16 +15,6 @@ class ReportsPage extends StatefulWidget {
 class _ReportsPageState extends State<ReportsPage> {
   bool showSpending = true;
   String selectedPeriod = 'YTD'; // Default to Year-to-Date
-  
-  final Map<String, Color> categoryColors = {
-    'Food': Colors.orange,
-    'Transportation': Colors.blue,
-    'Entertainment': Colors.green,
-    'Bills': Colors.red,
-    'Salary': Colors.purple,
-    'Freelance': Colors.yellow,
-    'Investments': Colors.pink,
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +164,9 @@ class _ReportsPageState extends State<ReportsPage> {
     final startDate = _getStartDateForPeriod(period, now);
     
     return transactions.where((transaction) {
-      return transaction.date.isAfter(startDate) || transaction.date.isAtSameMomentAs(startDate);
+      // Only include transactions between the start date and now (not in the future)
+      return (transaction.date.isAfter(startDate) || transaction.date.isAtSameMomentAs(startDate)) && 
+             (transaction.date.isBefore(now) || transaction.date.isAtSameMomentAs(now));
     }).toList();
   }
 
@@ -262,13 +255,12 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Color _getCategoryColor(String category) {
-    // Check if we have a predefined color for this category
-    if (categoryColors.containsKey(category)) {
-      return categoryColors[category]!;
-    }
+    // Use the Category class to get the color based on the category name
+    final categoryObj = Category.getInstance().firstWhere(
+      (categoryItem) => categoryItem.name == category,
+      orElse: () => Category(name: 'Unknown', color: Colors.grey), // Default to grey if not found
+    );
     
-    // If not, generate a color based on the category name for consistency
-    int hashCode = category.hashCode;
-    return Color((hashCode & 0xFFFFFF) | 0xFF000000);
+    return categoryObj.color;
   }
 }

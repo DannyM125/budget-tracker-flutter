@@ -7,6 +7,7 @@ import 'account_page.dart';
 import 'utils/transactions.dart';
 import 'utils/transfer_dialog.dart';
 import 'utils/color_utils.dart';
+import 'utils/category.dart'; // Import the Category class
 
 void main() {
   runApp(const MyApp());
@@ -66,13 +67,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _showAddTransferDialog() {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController amountController = TextEditingController();
-    final TextEditingController categoryController = TextEditingController();
-    
+    Category? selectedCategory = Category.getInstance().first;  // Default to the first category
+
     showAddTransferDialog(
       context,
       nameController,
       amountController,
-      categoryController,
+      selectedCategory, // Pass a valid Category object
       null,
       'Withdrawal',
       (value) {},
@@ -82,7 +83,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Transaction(
             name: name,
             amount: amount,
-            category: category,
+            category: category.name,
             date: date,
             type: type,
           ),

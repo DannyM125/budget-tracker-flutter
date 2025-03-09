@@ -109,14 +109,19 @@ class TransactionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Calculate current balance
+  // Calculate current balance (modified to exclude future transactions)
   double getCurrentBalance() {
     double balance = 0.0;
+    final now = DateTime.now();
+    
     for (var transaction in _transactions) {
-      if (transaction.type == 'Deposit') {
-        balance += transaction.amount;
-      } else {
-        balance -= transaction.amount;
+      // Only consider transactions up to the current date
+      if (transaction.date.isBefore(now) || transaction.date.isAtSameMomentAs(now)) {
+        if (transaction.type == 'Deposit') {
+          balance += transaction.amount;
+        } else {
+          balance -= transaction.amount;
+        }
       }
     }
     return balance;
@@ -127,27 +132,40 @@ class TransactionProvider with ChangeNotifier {
     return '\$${getCurrentBalance().toStringAsFixed(2)}';
   }
 
-  // Get balance data for chart
-  List<FlSpot> getBalanceOverTimeData() {
-    // Sort transactions by date (oldest first)
-    final sortedTransactions = List<Transaction>.from(_transactions);
-    sortedTransactions.sort((a, b) => a.date.compareTo(b.date));
+// Get balance data for chart (modified for YTD and to exclude future transactions)
+List<FlSpot> getBalanceOverTimeData() {
+  final now = DateTime.now();
+  final startOfYear = DateTime(now.year, 1, 1, 0, 0, 0);
+  
+  // Filter transactions to only include those from start of year to now
+  final filteredTransactions = _transactions.where((transaction) => 
+    (transaction.date.isAfter(startOfYear) || transaction.date.isAtSameMomentAs(startOfYear)) &&
+    (transaction.date.isBefore(now) || transaction.date.isAtSameMomentAs(now))
+  ).toList();
+  
+  // Sort filtered transactions by date (oldest first)
+  filteredTransactions.sort((a, b) => a.date.compareTo(b.date));
 
-    // Calculate running balance over time
-    double runningBalance = 0.0;
-    List<FlSpot> spots = [];
-    
-    for (int i = 0; i < sortedTransactions.length; i++) {
-      if (sortedTransactions[i].type == 'Deposit') {
-        runningBalance += sortedTransactions[i].amount;
-      } else {
-        runningBalance -= sortedTransactions[i].amount;
-      }
-      spots.add(FlSpot(i.toDouble(), runningBalance));
-    }
-    
-    return spots;
+  // If no transactions in the period, return empty list
+  if (filteredTransactions.isEmpty) {
+    return [];
   }
+
+  // Calculate running balance over time
+  double runningBalance = 0.0;
+  List<FlSpot> spots = [];
+  
+  for (int i = 0; i < filteredTransactions.length; i++) {
+    if (filteredTransactions[i].type == 'Deposit') {
+      runningBalance += filteredTransactions[i].amount;
+    } else {
+      runningBalance -= filteredTransactions[i].amount;
+    }
+    spots.add(FlSpot(i.toDouble(), runningBalance));
+  }
+  
+  return spots;
+}
 
   // Get transactions by type (Deposit or Withdrawal)
   List<Transaction> getTransactionsByType(String type) {
