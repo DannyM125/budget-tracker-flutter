@@ -1,3 +1,4 @@
+import 'package:budget_app/utils/category.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -5,9 +6,9 @@ import 'package:fl_chart/fl_chart.dart';
 class Transaction {
   final String name;
   final double amount;
-  final String category;
+  String category;
   final DateTime date;
-  final String type; // 'Deposit' or 'Withdrawal'
+  final String type;
 
   Transaction({
     required this.name,
@@ -97,17 +98,32 @@ class TransactionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Remove a transaction
-  void removeTransaction(int index) {
-    _transactions.removeAt(index);
+    // Remove a transaction
+  void removeTransaction(Transaction transaction) {
+    _transactions.removeAt(_transactions.indexOf(transaction));
     notifyListeners();
   }
 
+void deleteTransactionsByCategory(Category category) {
+  _transactions.removeWhere((transaction) => transaction.category == category.name);
+  // TODO: Save the updated transactions list to persistent storage (e.g., shared preferences, database)
+  notifyListeners();
+}
+
   // Update a transaction
-  void updateTransaction(int index, Transaction updatedTransaction) {
+  void updateTransaction(Transaction oldTransaction, Transaction updatedTransaction) {
+    int index = _transactions.indexOf(updatedTransaction);
     _transactions[index] = updatedTransaction;
     notifyListeners();
   }
+void updateTransactionsByCategory(String oldCategoryName, String newCategoryName) {
+  for (var transaction in _transactions) {
+    if (transaction.category == oldCategoryName) {
+      transaction.category = newCategoryName; // Update the category name for each transaction
+    }
+  }
+  notifyListeners(); // Notify listeners to refresh the UI after the update
+}
 
   // Calculate current balance (modified to exclude future transactions)
   double getCurrentBalance() {

@@ -1,5 +1,7 @@
 import 'package:budget_app/utils/category.dart';
+import 'package:budget_app/utils/transactions.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'utils/color_utils.dart';
 
 class AccountPage extends StatefulWidget {
@@ -163,133 +165,147 @@ class _AccountPageState extends State<AccountPage> {
     });
   }
   
-  void _editCategory(int index) async {
-    final TextEditingController nameController = TextEditingController(text: categories[index].name);
-    Color selectedColor = categories[index].color;
-    
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text('Edit Category'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Category Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text('Select Color:'),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 15,
-                  runSpacing: 15,
-                  children: [
-                    Colors.red,
-                    Colors.green,
-                    Colors.blue,
-                    Colors.orange,
-                    Colors.yellow,
-                    Colors.purple,
-                    Colors.teal,
-                    Colors.pink,
-                    Colors.indigo,
-                    Colors.cyan,
-                    Colors.amber,
-                    Colors.deepOrange,
-                  ].map((color) {
-                    return GestureDetector(
-                      onTap: () {
-                        setDialogState(() {
-                          selectedColor = color;
-                        });
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selectedColor.value == color.value ? Colors.black : Colors.transparent,
-                            width: 2,
-                          ),
+void _editCategory(int index) async {
+  final categoryToEdit = categories[index];
+
+  final TextEditingController _editCategoryController = TextEditingController();
+  _editCategoryController.text = categoryToEdit.name;
+  Color selectedColor = categoryToEdit.color;
+
+  await showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) {
+        return AlertDialog(
+          title: const Text('Edit Category'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // TextField for editing the category name
+              TextField(
+                controller: _editCategoryController,
+                decoration: const InputDecoration(labelText: 'Category Name'),
+              ),
+              const SizedBox(height: 20),
+              const Text('Select Color:'),
+              const SizedBox(height: 10),
+              
+              // Color Picker
+              Wrap(
+                spacing: 15,
+                runSpacing: 15,
+                children: [
+                  Colors.red,
+                  Colors.green,
+                  Colors.blue,
+                  Colors.orange,
+                  Colors.yellow,
+                  Colors.purple,
+                  Colors.teal,
+                  Colors.pink,
+                  Colors.indigo,
+                  Colors.cyan,
+                  Colors.amber,
+                  Colors.deepOrange,
+                ].map((color) {
+                  return GestureDetector(
+                    onTap: () {
+                      setDialogState(() {
+                        selectedColor = color;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selectedColor.value == color.value
+                              ? Colors.black
+                              : Colors.transparent,
+                          width: 2,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (nameController.text.isNotEmpty) {
-                    Navigator.pop(context, {
-                      'name': nameController.text,
-                      'color': selectedColor,
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorUtils.primaryColor,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Save'),
+                    ),
+                  );
+                }).toList(),
               ),
             ],
-          );
-        }
-      ),
-    ).then((result) {
-      if (result != null) {
-        setState(() {
-          categories[index] = Category(
-            name: result['name'],
-            color: result['color'],
-          );
-          // TODO: Save categories to persistent storage
-          _saveCategories();
-        });
-      }
-    });
-  }
+          ),
+          actions: [
+            // Cancel button
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            // Save button
+            ElevatedButton(
+              onPressed: () {
+                final newCategoryName = _editCategoryController.text.trim();
+                if (newCategoryName.isNotEmpty && (newCategoryName != categoryToEdit.name || selectedColor != categoryToEdit.color)) {
+                  // Update the category's name and color in the provider (update related transactions)
+                  Provider.of<TransactionProvider>(context, listen: false)
+                      .updateTransactionsByCategory(categoryToEdit.name, newCategoryName);
+
+                  setState(() {
+                    categoryToEdit.name = newCategoryName; // Update the name
+                    categoryToEdit.color = selectedColor; // Update the color
+                  });
+
+                  _saveCategories(); // Save the updated categories list to persistent storage
+                }
+                Navigator.pop(context); // Close the dialog
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorUtils.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+
+
   
-  void _deleteCategory(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Category'),
-        content: Text('Are you sure you want to delete "${categories[index].name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                categories.removeAt(index);
-                // TODO: Save categories to persistent storage
-                _saveCategories();
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+void _deleteCategory(int index) {
+  final categoryToDelete = categories[index];
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Category'),
+      content: Text('Are you sure you want to delete "${categoryToDelete.name}"?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            // Remove all transactions related to this category
+            Provider.of<TransactionProvider>(context, listen: false)
+                .deleteTransactionsByCategory(categoryToDelete);
+
+            setState(() {
+              categories.removeAt(index);
+            });
+
+            _saveCategories();  // Save the updated categories list
+            Navigator.pop(context);  // Close the dialog
+          },
+          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
+
   
   void _saveCategories() {
     // TODO: Implement saving categories to SharedPreferences or other storage
