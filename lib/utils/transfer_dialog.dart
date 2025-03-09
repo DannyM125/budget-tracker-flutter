@@ -1,184 +1,298 @@
 import 'package:flutter/material.dart';
 import 'color_utils.dart';
+import 'package:intl/intl.dart';
 
+// Function to show the dialog for adding a regular transfer
 void showAddTransferDialog(
   BuildContext context,
+  TextEditingController nameController,
   TextEditingController amountController,
   TextEditingController categoryController,
   DateTime? selectedDate,
   String transactionType,
   Function(String) onTransactionTypeChanged,
-  Function(DateTime?) onDateSelected,
+  Function(DateTime) onDateSelected,
+  Function(String, double, String, DateTime, String) onAddTransaction,
 ) {
+  // Reset controllers
+  nameController.clear();
+  amountController.clear();
+  categoryController.clear();
+  
+  // Set default date to today if not already set
+  DateTime date = selectedDate ?? DateTime.now();
+
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text(
-        'Add Transfer',
-        style: TextStyle(color: Colors.black), // Black text for title
-      ),
-      backgroundColor: Colors.white, // White background
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10), // Rounded corners
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DropdownButton<String>(
-            value: transactionType,
-            items: ['Withdrawal', 'Deposit']
-                .map((type) => DropdownMenuItem(
-                    value: type,
-                    child: Text(type, style: TextStyle(color: Colors.black))))
-                .toList(),
-            onChanged: (value) {
-              onTransactionTypeChanged(value!);
-            },
-          ),
-          TextField(
-            controller: amountController,
-            decoration: const InputDecoration(
-              labelText: 'Amount',
-              labelStyle:
-                  TextStyle(color: Colors.black), // Black text for label
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Add Transfer'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Transfer Name'),
+                  ),
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(labelText: 'Amount'),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  TextField(
+                    controller: categoryController,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Text('Transaction Type: '),
+                      DropdownButton<String>(
+                        value: transactionType,
+                        items: const [
+                          DropdownMenuItem(value: 'Deposit', child: Text('Deposit')),
+                          DropdownMenuItem(value: 'Withdrawal', child: Text('Withdrawal')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            onTransactionTypeChanged(value!);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Text('Date: '),
+                      TextButton(
+                        onPressed: () async {
+                          final DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate: date,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2101),
+                          );
+                          if (picked != null && picked != date) {
+                            setState(() {
+                              date = picked;
+                              onDateSelected(picked);
+                            });
+                          }
+                        },
+                        child: Text(
+                          DateFormat('MMM d, yyyy').format(date),
+                          style: TextStyle(color: ColorUtils.primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            keyboardType: TextInputType.number,
-          ),
-          TextField(
-            controller: categoryController,
-            decoration: const InputDecoration(
-              labelText: 'Category',
-              labelStyle:
-                  TextStyle(color: Colors.black), // Black text for label
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              onDateSelected(pickedDate);
-            },
-            child: const Text(
-              'Select Date',
-              style: TextStyle(color: Colors.black), // Black text for button
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.black), // Black text for cancel
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ColorUtils.primaryColor, // Blue background for save button
-          ),
-          child: const Text(
-            'Save',
-            style: TextStyle(color: Colors.white), // White text for save button
-          ),
-        ),
-      ],
-    ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Validate inputs
+                  if (nameController.text.isEmpty ||
+                      amountController.text.isEmpty ||
+                      categoryController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please fill in all fields')),
+                    );
+                    return;
+                  }
+
+                  // Parse amount, handling potential errors
+                  double? amount;
+                  try {
+                    amount = double.parse(amountController.text);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter a valid amount')),
+                    );
+                    return;
+                  }
+
+                  // Add the transaction
+                  onAddTransaction(
+                    nameController.text,
+                    amount,
+                    categoryController.text,
+                    date,
+                    transactionType,
+                  );
+
+                  Navigator.of(context).pop();
+                  
+                  // Show confirmation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transaction added successfully')),
+                  );
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
+      );
+    },
   );
 }
 
+// Function to show the dialog for adding a recurring transfer
 void showRecurringTransferDialog(
   BuildContext context,
+  TextEditingController nameController,
   TextEditingController amountController,
   TextEditingController categoryController,
   DateTime? selectedDate,
-  Function(DateTime?) onDateSelected,
+  Function(DateTime) onDateSelected,
+  Function(String, double, String, DateTime, String) onAddRecurringTransaction,
 ) {
+  // Reset controllers
+  nameController.clear();
+  amountController.clear();
+  categoryController.clear();
+  
+  // Set default date to today if not already set
+  DateTime date = selectedDate ?? DateTime.now();
+  String frequency = 'Monthly'; // Default frequency
+
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text(
-        'Add Recurring Transfer',
-        style: TextStyle(color: Colors.black), // Black text for title
-      ),
-      backgroundColor: Colors.white, // White background
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10), // Rounded corners
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: categoryController,
-            decoration: const InputDecoration(
-              labelText: 'Category',
-              labelStyle:
-                  TextStyle(color: Colors.black), // Black text for label
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Add Recurring Transfer'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Transfer Name'),
+                  ),
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(labelText: 'Amount'),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  TextField(
+                    controller: categoryController,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Text('Frequency: '),
+                      DropdownButton<String>(
+                        value: frequency,
+                        items: const [
+                          DropdownMenuItem(value: 'Daily', child: Text('Daily')),
+                          DropdownMenuItem(value: 'Weekly', child: Text('Weekly')),
+                          DropdownMenuItem(value: 'Monthly', child: Text('Monthly')),
+                          DropdownMenuItem(value: 'Yearly', child: Text('Yearly')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            frequency = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Text('Starting Date: '),
+                      TextButton(
+                        onPressed: () async {
+                          final DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate: date,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2101),
+                          );
+                          if (picked != null && picked != date) {
+                            setState(() {
+                              date = picked;
+                              onDateSelected(picked);
+                            });
+                          }
+                        },
+                        child: Text(
+                          DateFormat('MMM d, yyyy').format(date),
+                          style: TextStyle(color: ColorUtils.primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          TextField(
-            controller: amountController,
-            decoration: const InputDecoration(
-              labelText: 'Amount',
-              labelStyle:
-                  TextStyle(color: Colors.black), // Black text for label
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              onDateSelected(pickedDate);
-            },
-            child: const Text(
-              'Select Start Date',
-              style: TextStyle(color: Colors.black), // Black text for button
-            ),
-          ),
-          DropdownButton<String>(
-            value: 'Monthly',
-            items: ['Daily', 'Weekly', 'Monthly', 'Yearly']
-                .map((cycle) => DropdownMenuItem(
-                    value: cycle,
-                    child: Text(cycle, style: TextStyle(color: Colors.black))))
-                .toList(),
-            onChanged: (value) {},
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.black), // Black text for cancel
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue, // Blue background for save button
-          ),
-          child: const Text(
-            'Save',
-            style: TextStyle(color: Colors.white), // White text for save button
-          ),
-        ),
-      ],
-    ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Validate inputs
+                  if (nameController.text.isEmpty ||
+                      amountController.text.isEmpty ||
+                      categoryController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please fill in all fields')),
+                    );
+                    return;
+                  }
+
+                  // Parse amount, handling potential errors
+                  double? amount;
+                  try {
+                    amount = double.parse(amountController.text);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter a valid amount')),
+                    );
+                    return;
+                  }
+
+                  // Add the recurring transaction
+                  onAddRecurringTransaction(
+                    nameController.text,
+                    amount,
+                    categoryController.text,
+                    date,
+                    frequency,
+                  );
+
+                  Navigator.of(context).pop();
+                  
+                  // Show confirmation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Recurring transaction added successfully')),
+                  );
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
+      );
+    },
   );
 }

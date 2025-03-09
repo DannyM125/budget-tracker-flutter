@@ -1,13 +1,18 @@
+import 'package:budget_app/utils/transactions.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'utils/color_utils.dart';
-
+import 'utils/color_utils.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Access the transaction provider
+    final transactionProvider = Provider.of<TransactionProvider>(context);
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -30,14 +35,14 @@ class HomePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(60),
                 border: Border.all(
                   width: 6,
-                  color: ColorUtils.primaryColor, // Border color can be adjusted
+                  color: ColorUtils.primaryColor,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.5),
                     spreadRadius: 3,
                     blurRadius: 7,
-                    offset: const Offset(0, 3), // changes position of shadow
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -53,7 +58,8 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '\$5,000.00', // Display current balance
+                    // Use the formatted balance from the transaction provider
+                    transactionProvider.getFormattedBalance(),
                     style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.bold,
@@ -86,31 +92,26 @@ class HomePage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(15, 30, 15, 30),
                 child: LineChart(
                   LineChartData(
-                    gridData: FlGridData(show: false),
+                    gridData: const FlGridData(show: false),
                     titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
+                      leftTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: true, reservedSize: 40),
                       ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false, reservedSize: 40), // Hide right Y-axis titles
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false, reservedSize: 40),
                       ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false, reservedSize: 40), // Hide bottom X-axis titles
+                      bottomTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false, reservedSize: 40),
                       ),
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false, reservedSize: 40), // Hide top titles
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false, reservedSize: 40),
                       ),
                     ),
                     borderData: FlBorderData(show: true),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: [
-                          const FlSpot(0, 2000),
-                          const FlSpot(1, 3000),
-                          const FlSpot(2, 4000),
-                          const FlSpot(3, 4500),
-                          const FlSpot(4, 5000), //TODO MEGH JSON STUFF
-                        ],
+                        // Use the dynamic chart data from transaction provider
+                        spots: transactionProvider.getBalanceOverTimeData(),
                         isCurved: false,
                         color: ColorUtils.primaryColor,
                         barWidth: 4,

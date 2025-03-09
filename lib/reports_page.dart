@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'utils/color_utils.dart';
-
+import 'utils/transactions.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -11,20 +12,16 @@ class ReportsPage extends StatefulWidget {
 }
 
 class _ReportsPageState extends State<ReportsPage> {
-  final List<Map<String, dynamic>> spendingCategories = [
-    {'category': 'Food', 'amount': 120},
-    {'category': 'Transportation', 'amount': 60},
-    {'category': 'Entertainment', 'amount': 80},
-    {'category': 'Bills', 'amount': 200},
-  ];//TODO MEGH JSON STUFF
-
-  final List<Map<String, dynamic>> incomeCategories = [ 
-    {'category': 'Salary', 'amount': 1000},
-    {'category': 'Freelance', 'amount': 300},
-    {'category': 'Investments', 'amount': 150},
-  ];//TODO MEGH JSON STUFF
-
   bool showSpending = true;
+  final Map<String, Color> categoryColors = {
+    'Food': Colors.orange,
+    'Transportation': Colors.blue,
+    'Entertainment': Colors.green,
+    'Bills': Colors.red,
+    'Salary': Colors.purple,
+    'Freelance': Colors.yellow,
+    'Investments': Colors.pink,
+  }; //TODO MEGH SAVE THIS IN JSON
 
   @override
   Widget build(BuildContext context) {
@@ -36,91 +33,174 @@ class _ReportsPageState extends State<ReportsPage> {
         elevation: 1,
         foregroundColor: Colors.black,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  showSpending = !showSpending;
-                });
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: ColorUtils.primaryColor),
-              child: Text(
-                showSpending ? 'Show Income Report' : 'Show Spending Report',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 250,
-              child: PieChart(
-                PieChartData(
-                  sections: showSpending
-                      ? _generatePieChartSections(spendingCategories)
-                      : _generatePieChartSections(incomeCategories),
-                  borderData: FlBorderData(show: false),
+      body: Consumer<TransactionProvider>(
+        builder: (context, transactionProvider, child) {
+          // Process transactions into spending and income categories
+          final Map<String, double> spendingCategories = {};
+          final Map<String, double> incomeCategories = {};
+
+          for (var transaction in transactionProvider.transactions) {
+            if (transaction.type == 'Withdrawal' || transaction.type == 'Expense') {
+              // Add to spending categories
+              if (spendingCategories.containsKey(transaction.category)) {
+                spendingCategories[transaction.category] = 
+                    spendingCategories[transaction.category]! + transaction.amount;
+              } else {
+                spendingCategories[transaction.category] = transaction.amount;
+              }
+            } else if (transaction.type == 'Deposit' || transaction.type == 'Income') {
+              // Add to income categories
+              if (incomeCategories.containsKey(transaction.category)) {
+                incomeCategories[transaction.category] = 
+                    incomeCategories[transaction.category]! + transaction.amount;
+              } else {
+                incomeCategories[transaction.category] = transaction.amount;
+              }
+            }
+          }
+
+          // Convert maps to lists of maps for the chart and list
+          final List<Map<String, dynamic>> spendingList = spendingCategories.entries
+              .map((entry) => {'category': entry.key, 'amount': entry.value})
+              .toList();
+
+          final List<Map<String, dynamic>> incomeList = incomeCategories.entries
+              .map((entry) => {'category': entry.key, 'amount': entry.value})
+              .toList();
+
+          // Sort lists by amount in descending order
+          spendingList.sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
+          incomeList.sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      showSpending = !showSpending;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: ColorUtils.primaryColor),
+                  child: Text(
+                    showSpending ? 'Show Income Report' : 'Show Spending Report',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                Expanded(
+                  flex: 3,
+                  child: showSpending
+                      ? (spendingList.isEmpty
+                          ? _buildEmptyState('No spending transactions found')
+                          : _buildChartSection(spendingList))
+                      : (incomeList.isEmpty
+                          ? _buildEmptyState('No income transactions found')
+                          : _buildChartSection(incomeList)),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  showSpending ? 'Top Spending Categories:' : 'Top Earning Categories:',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: ColorUtils.primaryColor),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  flex: 2,
+                  child: showSpending
+                      ? (spendingList.isEmpty
+                          ? _buildEmptyState('Add transactions to see your spending breakdown')
+                          : _buildCategoryList(spendingList))
+                      : (incomeList.isEmpty
+                          ? _buildEmptyState('Add transactions to see your income breakdown')
+                          : _buildCategoryList(incomeList)),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              showSpending ? 'Top Spending Categories:' : 'Top Earning Categories:',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: ColorUtils.primaryColor),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: showSpending ? spendingCategories.length : incomeCategories.length,
-                itemBuilder: (context, index) {
-                  final category = showSpending ? spendingCategories[index] : incomeCategories[index];
-                  return ListTile(
-                    title: Text(category['category'], style: const TextStyle(fontSize: 20)),
-                    trailing: Text('\$${category['amount']}', style: const TextStyle(fontSize: 20)),
-                  );
-                },
-              ),
-            ),
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.bar_chart, size: 60, color: Colors.grey),
+          const SizedBox(height: 20),
+          Text(
+            message,
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartSection(List<Map<String, dynamic>> data) {
+    return SizedBox(
+      height: 250,
+      child: PieChart(
+        PieChartData(
+          sections: _generatePieChartSections(data),
+          borderData: FlBorderData(show: false),
+          sectionsSpace: 2,
+          centerSpaceRadius: 40,
         ),
       ),
     );
   }
 
-  List<PieChartSectionData> _generatePieChartSections(List<Map<String, dynamic>> categories) {
-    return categories
-        .map(
-          (category) => PieChartSectionData(
-            value: category['amount'].toDouble(),
-            color: _getCategoryColor(category['category']),
-            title: '${category['category']} \n \$${category['amount']}',
-            radius: 60,
-            titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+  Widget _buildCategoryList(List<Map<String, dynamic>> categories) {
+    return ListView.builder(
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories[index];
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: _getCategoryColor(category['category']),
+            radius: 10,
           ),
-        )
-        .toList();
+          title: Text(category['category'], style: const TextStyle(fontSize: 18)),
+          trailing: Text(
+            '\$${category['amount'].toStringAsFixed(2)}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        );
+      },
+    );
   }
 
-  Color _getCategoryColor(String category) { //TODO MEGH JSON STUFF
-    switch (category) {
-      case 'Food':
-        return Colors.orange;
-      case 'Transportation':
-        return Colors.blue;
-      case 'Entertainment':
-        return Colors.green;
-      case 'Bills':
-        return Colors.red;
-      case 'Salary':
-        return Colors.purple;
-      case 'Freelance':
-        return Colors.yellow;
-      case 'Investments':
-        return Colors.pink;
-      default:
-        return Colors.grey;
+  List<PieChartSectionData> _generatePieChartSections(List<Map<String, dynamic>> categories) {
+    return categories.map(
+      (category) => PieChartSectionData(
+        value: category['amount'].toDouble(),
+        color: _getCategoryColor(category['category']),
+        title: categories.length <= 3 
+            ? '${category['category']}\n\$${category['amount'].toStringAsFixed(2)}'
+            : '\$${category['amount'].toStringAsFixed(0)}',
+        radius: 60,
+        titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+        badgeWidget: categories.length > 3 ? null : null,
+        badgePositionPercentageOffset: 1.1,
+      ),
+    ).toList();
+  }
+
+  Color _getCategoryColor(String category) {
+    // Check if we have a predefined color for this category
+    if (categoryColors.containsKey(category)) {
+      return categoryColors[category]!;
     }
+    
+    // If not, generate a color based on the category name for consistency
+    int hashCode = category.hashCode;
+    return Color((hashCode & 0xFFFFFF) | 0xFF000000); 
+    /*This is kinda sick ngl, it creates a color based off the chars in the 
+    category name!*/
   }
 }
