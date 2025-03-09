@@ -75,40 +75,6 @@ class _TransfersPageState extends State<TransfersPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => showRecurringTransferDialog(
-                    context,
-                    _nameController,
-                    _amountController,
-                    _categoryController,
-                    _selectedDate,
-                    (date) => setState(() => _selectedDate = date),
-                    (name, amount, category, date, frequency) {
-                      // Add recurring transaction logic will be implemented here
-                      transactionProvider.addTransaction(
-                        Transaction(
-                          name: '$name (Recurring - $frequency)',
-                          amount: amount,
-                          category: category,
-                          date: date,
-                          type: 'Withdrawal', // Most recurring transactions are withdrawals
-                        ),
-                      );
-                    },
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorUtils.primaryColor,
-                    elevation: 4,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  child: const Text(
-                    'Add Recurring Transfer', 
-                    style: TextStyle(color: Colors.white, fontSize: 20)
-                  ),
-                ),
-              ),
-              const SizedBox(height: 50),
               SizedBox(
                 height: 600,
                 child: Container(
@@ -233,6 +199,50 @@ class _TransfersPageState extends State<TransfersPage> {
                                             TextButton(
                                               onPressed: () => Navigator.pop(context),
                                               child: const Text('Close'),
+                                            ),
+                                            TextButton(
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                // Show confirmation dialog
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (BuildContext context) {
+                                                    return AlertDialog(
+                                                      title: const Text("Confirm Delete"),
+                                                      content: const Text("Are you sure you want to delete this transaction?"),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.of(context).pop(),
+                                                          child: const Text("CANCEL"),
+                                                        ),
+                                                        TextButton(
+                                                          style: TextButton.styleFrom(
+                                                            foregroundColor: Colors.red,
+                                                          ),
+                                                          onPressed: () {
+                                                            // Delete the transaction
+                                                            Provider.of<TransactionProvider>(context, listen: false)
+                                                                .removeTransaction(index);
+                                                            
+                                                            // Close both dialogs
+                                                            Navigator.of(context).pop();
+                                                            Navigator.of(context).pop();
+                                                            
+                                                            // Show confirmation snackbar
+                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                              const SnackBar(content: Text('Transaction deleted')),
+                                                            );
+                                                          },
+                                                          child: const Text("DELETE"),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              child: const Text('Delete'),
                                             ),
                                           ],
                                         ),

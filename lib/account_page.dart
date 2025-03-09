@@ -32,7 +32,7 @@ class _AccountPageState extends State<AccountPage> {
                 ].map((color) {
                   return GestureDetector(
                     onTap: () {
-                      Navigator.of(context).pop(color);
+                      Navigator.of(context).pop(color); //TODO MEGH SAVE COLOR IN JSON
                     },
                     child: Container(
                       width: 40,

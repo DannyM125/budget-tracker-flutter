@@ -13,6 +13,8 @@ class ReportsPage extends StatefulWidget {
 
 class _ReportsPageState extends State<ReportsPage> {
   bool showSpending = true;
+  String selectedPeriod = 'YTD'; // Default to Year-to-Date
+  
   final Map<String, Color> categoryColors = {
     'Food': Colors.orange,
     'Transportation': Colors.blue,
@@ -21,7 +23,7 @@ class _ReportsPageState extends State<ReportsPage> {
     'Salary': Colors.purple,
     'Freelance': Colors.yellow,
     'Investments': Colors.pink,
-  }; //TODO MEGH SAVE THIS IN JSON
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +37,17 @@ class _ReportsPageState extends State<ReportsPage> {
       ),
       body: Consumer<TransactionProvider>(
         builder: (context, transactionProvider, child) {
+          // Filter transactions based on selected period
+          final filteredTransactions = _filterTransactionsByPeriod(
+            transactionProvider.transactions,
+            selectedPeriod,
+          );
+          
           // Process transactions into spending and income categories
           final Map<String, double> spendingCategories = {};
           final Map<String, double> incomeCategories = {};
 
-          for (var transaction in transactionProvider.transactions) {
+          for (var transaction in filteredTransactions) {
             if (transaction.type == 'Withdrawal' || transaction.type == 'Expense') {
               // Add to spending categories
               if (spendingCategories.containsKey(transaction.category)) {
@@ -77,27 +85,63 @@ class _ReportsPageState extends State<ReportsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      showSpending = !showSpending;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: ColorUtils.primaryColor),
-                  child: Text(
-                    showSpending ? 'Show Income Report' : 'Show Spending Report',
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            showSpending = !showSpending;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: ColorUtils.primaryColor),
+                        child: Text(
+                          showSpending ? 'Show Income Report' : 'Show Spending Report',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: ColorUtils.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: DropdownButton<String>(
+                        value: selectedPeriod,
+                        icon: Icon(Icons.arrow_drop_down, color: ColorUtils.primaryColor),
+                        elevation: 16,
+                        style: TextStyle(
+                          color: ColorUtils.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        underline: Container(height: 0), // Remove the underline
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedPeriod = newValue!;
+                          });
+                        },
+                        items: <String>['Day', 'Week', 'Month', 'YTD']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 Expanded(
                   flex: 3,
                   child: showSpending
                       ? (spendingList.isEmpty
-                          ? _buildEmptyState('No spending transactions found')
+                          ? _buildEmptyState('No spending transactions found for $selectedPeriod')
                           : _buildChartSection(spendingList))
                       : (incomeList.isEmpty
-                          ? _buildEmptyState('No income transactions found')
+                          ? _buildEmptyState('No income transactions found for $selectedPeriod')
                           : _buildChartSection(incomeList)),
                 ),
                 const SizedBox(height: 20),
@@ -122,6 +166,32 @@ class _ReportsPageState extends State<ReportsPage> {
         },
       ),
     );
+  }
+
+  List<Transaction> _filterTransactionsByPeriod(List<Transaction> transactions, String period) {
+    final now = DateTime.now();
+    final startDate = _getStartDateForPeriod(period, now);
+    
+    return transactions.where((transaction) {
+      return transaction.date.isAfter(startDate) || transaction.date.isAtSameMomentAs(startDate);
+    }).toList();
+  }
+
+  DateTime _getStartDateForPeriod(String period, DateTime now) {
+    switch (period) {
+      case 'Day':
+        return DateTime(now.year, now.month, now.day, 0, 0, 0);
+      case 'Week':
+        // Go back to the most recent Sunday (or whatever day you want to consider as week start)
+        final daysToSubtract = now.weekday % 7;
+        return DateTime(now.year, now.month, now.day - daysToSubtract, 0, 0, 0);
+      case 'Month':
+        return DateTime(now.year, now.month, 1, 0, 0, 0);
+      case 'YTD':
+        return DateTime(now.year, 1, 1, 0, 0, 0);
+      default:
+        return DateTime(now.year, 1, 1, 0, 0, 0); // Default to YTD
+    }
   }
 
   Widget _buildEmptyState(String message) {
@@ -199,8 +269,6 @@ class _ReportsPageState extends State<ReportsPage> {
     
     // If not, generate a color based on the category name for consistency
     int hashCode = category.hashCode;
-    return Color((hashCode & 0xFFFFFF) | 0xFF000000); 
-    /*This is kinda sick ngl, it creates a color based off the chars in the 
-    category name!*/
+    return Color((hashCode & 0xFFFFFF) | 0xFF000000);
   }
 }
