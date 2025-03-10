@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:budget_app/utils/category.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Transaction model class to store individual transaction data
 class Transaction {
@@ -43,45 +45,12 @@ class Transaction {
 
 // TransactionProvider class to manage transactions
 class TransactionProvider with ChangeNotifier {
-  List<Transaction> _transactions = [
-    //TODO MEGH SAVE THIS IN JSON
-    // Initial sample data
-    Transaction(
-      name: 'Salary',
-      amount: 2000.0,
-      category: 'Income',
-      date: DateTime.now().subtract(const Duration(days: 30)),
-      type: 'Deposit',
-    ),
-    Transaction(
-      name: 'Rent Payment',
-      amount: 800.0,
-      category: 'Housing',
-      date: DateTime.now().subtract(const Duration(days: 25)),
-      type: 'Withdrawal',
-    ),
-    Transaction(
-      name: 'Grocery Shopping',
-      amount: 120.0,
-      category: 'Food',
-      date: DateTime.now().subtract(const Duration(days: 20)),
-      type: 'Withdrawal',
-    ),
-    Transaction(
-      name: 'Freelance Work',
-      amount: 500.0,
-      category: 'Income',
-      date: DateTime.now().subtract(const Duration(days: 15)),
-      type: 'Deposit',
-    ),
-    Transaction(
-      name: 'Dinner Out',
-      amount: 80.0,
-      category: 'Food',
-      date: DateTime.now().subtract(const Duration(days: 5)),
-      type: 'Withdrawal',
-    ),
-  ];
+  List<Transaction> _transactions = [];
+  static const String _storageKey = 'transactions_data';
+
+  TransactionProvider() {
+    loadTransactions();
+  }
 
   // Get all transactions
   List<Transaction> get transactions => _transactions;
@@ -93,42 +62,84 @@ class TransactionProvider with ChangeNotifier {
     return sortedList;
   }
 
+  // Load transactions from SharedPreferences
+  Future<void> loadTransactions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? transactionsJson = prefs.getString(_storageKey);
+      
+      if (transactionsJson != null) {
+        final List<dynamic> decodedList = jsonDecode(transactionsJson);
+        _transactions = decodedList
+            .map((item) => Transaction.fromMap(item))
+            .toList();
+      } else {
+        // Set default transactions only if no saved data exists
+        _setDefaultTransactions();
+      }
+    } catch (e) {
+      debugPrint('Error loading transactions: $e');
+      // Fallback to default transactions if loading fails
+      _setDefaultTransactions();
+    }
+    
+    notifyListeners();
+  }
+
+  // Save transactions to SharedPreferences
+  Future<void> saveTransactions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final List<Map<String, dynamic>> transactionsList = 
+          _transactions.map((transaction) => transaction.toMap()).toList();
+      final String transactionsJson = jsonEncode(transactionsList);
+      await prefs.setString(_storageKey, transactionsJson);
+    } catch (e) {
+      debugPrint('Error saving transactions: $e');
+    }
+  }
+
   // Add a new transaction
   void addTransaction(Transaction transaction) {
     _transactions.add(transaction);
+    saveTransactions();
     notifyListeners();
   }
 
   // Remove a transaction
   void removeTransaction(Transaction transaction) {
     _transactions.removeAt(_transactions.indexOf(transaction));
+    saveTransactions();
     notifyListeners();
   }
 
   void deleteTransactionsByCategory(Category category) {
     _transactions
         .removeWhere((transaction) => transaction.category == category.name);
-    // TODO: Save the updated transactions list to persistent storage (e.g., shared preferences, database)
+    saveTransactions();
     notifyListeners();
   }
 
   // Update a transaction
   void updateTransaction(
       Transaction oldTransaction, Transaction updatedTransaction) {
-    int index = _transactions.indexOf(updatedTransaction);
-    _transactions[index] = updatedTransaction;
-    notifyListeners();
+    int index = _transactions.indexOf(oldTransaction);
+    if (index != -1) {
+      _transactions[index] = updatedTransaction;
+      saveTransactions();
+      notifyListeners();
+    }
   }
 
   void updateTransactionsByCategory(
       String oldCategoryName, String newCategoryName) {
     for (var transaction in _transactions) {
       if (transaction.category == oldCategoryName) {
-        transaction.category =
-            newCategoryName; // Update the category name for each transaction
+        transaction.category = newCategoryName;
       }
     }
-    notifyListeners(); // Notify listeners to refresh the UI after the update
+    saveTransactions();
+    notifyListeners();
   }
 
   // Calculate current balance (modified to exclude future transactions)
@@ -155,7 +166,7 @@ class TransactionProvider with ChangeNotifier {
     return '\$${getCurrentBalance().toStringAsFixed(2)}';
   }
 
-// Get balance data for chart (modified for YTD and to exclude future transactions)
+  // Get balance data for chart (modified for YTD and to exclude future transactions)
   List<FlSpot> getBalanceOverTimeData() {
     final now = DateTime.now();
     final startOfYear = DateTime(now.year, 1, 1, 0, 0, 0);
@@ -204,5 +215,46 @@ class TransactionProvider with ChangeNotifier {
   List<Transaction> getRecurringTransactions() {
     // This is a placeholder - you'll need to define what makes a transaction recurring
     return [];
+  }
+
+  // Set default transactions (used if no saved data exists)
+  void _setDefaultTransactions() {
+    _transactions = [
+      Transaction(
+        name: 'Salary',
+        amount: 2000.0,
+        category: 'Income',
+        date: DateTime.now().subtract(const Duration(days: 30)),
+        type: 'Deposit',
+      ),
+      Transaction(
+        name: 'Rent Payment',
+        amount: 800.0,
+        category: 'Housing',
+        date: DateTime.now().subtract(const Duration(days: 25)),
+        type: 'Withdrawal',
+      ),
+      Transaction(
+        name: 'Grocery Shopping',
+        amount: 120.0,
+        category: 'Food',
+        date: DateTime.now().subtract(const Duration(days: 20)),
+        type: 'Withdrawal',
+      ),
+      Transaction(
+        name: 'Freelance Work',
+        amount: 500.0,
+        category: 'Income',
+        date: DateTime.now().subtract(const Duration(days: 15)),
+        type: 'Deposit',
+      ),
+      Transaction(
+        name: 'Dinner Out',
+        amount: 80.0,
+        category: 'Food',
+        date: DateTime.now().subtract(const Duration(days: 5)),
+        type: 'Withdrawal',
+      ),
+    ];
   }
 }
