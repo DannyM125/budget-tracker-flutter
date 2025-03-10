@@ -13,21 +13,22 @@ void showAddTransferDialog(
   String transactionType,
   Function(String) onTransactionTypeChanged,
   Function(DateTime) onDateSelected,
-  Function(String, double, Category, DateTime, String) onAddTransaction, // Change String to Category
+  Function(String, double, Category, DateTime, String)
+      onAddTransaction, // Change String to Category
 ) {
   // Reset controllers
   nameController.clear();
   amountController.clear();
-  
+
   // Set default date to today if not already set
   DateTime date = selectedDate ?? DateTime.now();
-  
+
   // Create a local variable to track transaction type inside the dialog
   String localTransactionType = transactionType;
-  
+
   // Predefined category list
   List<Category> categories = Category.getInstance();
-  
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -41,19 +42,22 @@ void showAddTransferDialog(
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Transfer Name'),
+                    decoration:
+                        const InputDecoration(labelText: 'Transfer Name'),
                   ),
                   TextField(
                     controller: amountController,
                     decoration: const InputDecoration(labelText: 'Amount'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       const Text('Category: '),
                       DropdownButton<Category>(
-                        value: selectedCategory ?? categories.first, // Default to first category
+                        value: selectedCategory ??
+                            categories.first, // Default to first category
                         items: categories.map((Category category) {
                           return DropdownMenuItem(
                             value: category,
@@ -75,8 +79,10 @@ void showAddTransferDialog(
                       DropdownButton<String>(
                         value: localTransactionType,
                         items: const [
-                          DropdownMenuItem(value: 'Deposit', child: Text('Deposit')),
-                          DropdownMenuItem(value: 'Withdrawal', child: Text('Withdrawal')),
+                          DropdownMenuItem(
+                              value: 'Deposit', child: Text('Deposit')),
+                          DropdownMenuItem(
+                              value: 'Withdrawal', child: Text('Withdrawal')),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -130,7 +136,8 @@ void showAddTransferDialog(
                       amountController.text.isEmpty ||
                       selectedCategory == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please fill in all fields')),
+                      const SnackBar(
+                          content: Text('Please fill in all fields')),
                     );
                     return;
                   }
@@ -141,7 +148,8 @@ void showAddTransferDialog(
                     amount = double.parse(amountController.text);
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter a valid amount')),
+                      const SnackBar(
+                          content: Text('Please enter a valid amount')),
                     );
                     return;
                   }
@@ -156,10 +164,11 @@ void showAddTransferDialog(
                   );
 
                   Navigator.of(context).pop();
-                  
+
                   // Show confirmation
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transaction added successfully')),
+                    const SnackBar(
+                        content: Text('Transaction added successfully')),
                   );
                 },
                 child: const Text('Add'),

@@ -15,17 +15,19 @@ class TransfersPage extends StatefulWidget {
 
 class _TransfersPageState extends State<TransfersPage> {
   // Controllers for adding new transactions
-  final TextEditingController _newTransactionNameController = TextEditingController();
-  final TextEditingController _newTransactionAmountController = TextEditingController();
+  final TextEditingController _newTransactionNameController =
+      TextEditingController();
+  final TextEditingController _newTransactionAmountController =
+      TextEditingController();
   Category? _newTransactionCategory;
   DateTime? _newTransactionDate;
   String _transactionType = 'Withdrawal';
-  
+
   // Controllers for filtering
   final TextEditingController _searchController = TextEditingController();
   Category? _filterCategory;
   String _searchQuery = "";
-  
+
   // Controllers for editing transactions
   final TextEditingController _editNameController = TextEditingController();
   final TextEditingController _editAmountController = TextEditingController();
@@ -40,8 +42,11 @@ class _TransfersPageState extends State<TransfersPage> {
 
     // Filter transactions based on search query and selected category
     final filteredTransactions = transactions.where((transaction) {
-      final matchesSearch = transaction.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesCategory = _filterCategory == null || _filterCategory!.name == 'All' || transaction.category == _filterCategory!.name;
+      final matchesSearch =
+          transaction.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesCategory = _filterCategory == null ||
+          _filterCategory!.name == 'All' ||
+          transaction.category == _filterCategory!.name;
       return matchesSearch && matchesCategory;
     }).toList();
 
@@ -59,7 +64,9 @@ class _TransfersPageState extends State<TransfersPage> {
                     context,
                     _newTransactionNameController,
                     _newTransactionAmountController,
-                    _newTransactionCategory ?? Category.getInstance().first, // Default to the first category
+                    _newTransactionCategory ??
+                        Category.getInstance()
+                            .first, // Default to the first category
                     _newTransactionDate,
                     _transactionType,
                     (value) => setState(() => _transactionType = value),
@@ -83,12 +90,11 @@ class _TransfersPageState extends State<TransfersPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ColorUtils.primaryColor,
                     elevation: 4,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                   ),
-                  child: const Text(
-                    'Add Transfer', 
-                    style: TextStyle(color: Colors.white, fontSize: 20)
-                  ),
+                  child: const Text('Add Transfer',
+                      style: TextStyle(color: Colors.white, fontSize: 20)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -109,7 +115,8 @@ class _TransfersPageState extends State<TransfersPage> {
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: ColorUtils.primaryColor),
+                          borderSide:
+                              BorderSide(color: ColorUtils.primaryColor),
                         ),
                       ),
                     ),
@@ -127,7 +134,7 @@ class _TransfersPageState extends State<TransfersPage> {
                     items: [
                       // Adding "All" as a dropdown option
                       DropdownMenuItem<Category>(
-                        value: null,  // Represents "All" option
+                        value: null, // Represents "All" option
                         child: const Text('All'),
                       ),
                       ...Category.getInstance().map((category) {
@@ -162,7 +169,8 @@ class _TransfersPageState extends State<TransfersPage> {
                     children: [
                       const Text(
                         'All Transactions',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 10),
                       Expanded(
@@ -178,11 +186,13 @@ class _TransfersPageState extends State<TransfersPage> {
                             itemCount: filteredTransactions.length,
                             itemBuilder: (context, index) {
                               final transaction = filteredTransactions[index];
-                              final formattedAmount = transaction.type == 'Deposit' 
-                                  ? '+\$${transaction.amount.toStringAsFixed(2)}' 
+                              final formattedAmount = transaction.type ==
+                                      'Deposit'
+                                  ? '+\$${transaction.amount.toStringAsFixed(2)}'
                                   : '-\$${transaction.amount.toStringAsFixed(2)}';
-                              final formattedDate = DateFormat('MMM d, yyyy').format(transaction.date);
-                              
+                              final formattedDate = DateFormat('MMM d, yyyy')
+                                  .format(transaction.date);
+
                               return Card(
                                 color: Colors.white,
                                 shape: RoundedRectangleBorder(
@@ -192,12 +202,15 @@ class _TransfersPageState extends State<TransfersPage> {
                                 child: ListTile(
                                   title: Text(transaction.name),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         formattedAmount,
                                         style: TextStyle(
-                                          color: transaction.type == 'Deposit' ? Colors.green : Colors.red,
+                                          color: transaction.type == 'Deposit'
+                                              ? Colors.green
+                                              : Colors.red,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -209,7 +222,8 @@ class _TransfersPageState extends State<TransfersPage> {
                                   ),
                                   trailing: const Icon(Icons.arrow_forward_ios),
                                   onTap: () {
-                                    _showTransactionDialog(context, transaction);
+                                    _showTransactionDialog(
+                                        context, transaction);
                                   },
                                 ),
                               );
@@ -233,111 +247,110 @@ class _TransfersPageState extends State<TransfersPage> {
     _editNameController.text = transaction.name;
     _editAmountController.text = transaction.amount.toStringAsFixed(2);
     _editCategory = Category.getInstance().firstWhere(
-      (category) => category.name == transaction.category, 
-      orElse: () => Category.getInstance().first, // Default to the first category
+      (category) => category.name == transaction.category,
+      orElse: () =>
+          Category.getInstance().first, // Default to the first category
     );
     _editDate = transaction.date;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Transaction Details'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _editNameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  TextField(
-                    controller: _editAmountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  DropdownButton<Category>(
-                    value: _editCategory,
-                    hint: const Text('Category'),
-                    onChanged: (Category? newCategory) {
-                      setState(() {
-                        _editCategory = newCategory;
-                      });
-                    },
-                    items: Category.getInstance().map((category) {
-                      return DropdownMenuItem<Category>(
-                        value: category,
-                        child: Text(category.name),
-                      );
-                    }).toList(),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Date picker for selecting the transaction date
-                      showDatePicker(
-                        context: context,
-                        initialDate: _editDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime.now(),
-                      ).then((pickedDate) {
-                        if (pickedDate != null && pickedDate != _editDate) {
-                          setState(() {
-                            _editDate = pickedDate;
-                          });
-                        }
-                      });
-                    },
-                    child: Text(
-                      'Date: ${_editDate != null ? DateFormat('MMM d, yyyy').format(_editDate!) : 'Select Date'}',
-                      style: TextStyle(color: Colors.blue),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Transaction Details'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _editNameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                TextField(
+                  controller: _editAmountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Amount'),
+                ),
+                DropdownButton<Category>(
+                  value: _editCategory,
+                  hint: const Text('Category'),
+                  onChanged: (Category? newCategory) {
+                    setState(() {
+                      _editCategory = newCategory;
+                    });
                   },
-                  child: const Text('Close'),
+                  items: Category.getInstance().map((category) {
+                    return DropdownMenuItem<Category>(
+                      value: category,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
                 ),
                 TextButton(
                   onPressed: () {
-                    // Update the transaction details
-                    final updatedTransaction = Transaction(
-                      name: _editNameController.text,
-                      amount: double.tryParse(_editAmountController.text) ?? 0.0,
-                      category: _editCategory?.name ?? '',
-                      date: _editDate ?? DateTime.now(),
-                      type: transaction.type, // Keep the original type
-                    );
-                    // Update the transaction in the provider
-                    Provider.of<TransactionProvider>(context, listen: false)
-                        .updateTransaction(transaction, updatedTransaction);
-                    Navigator.of(context).pop(); // Close the dialog
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Transaction updated')),
-                    );
+                    // Date picker for selecting the transaction date
+                    showDatePicker(
+                      context: context,
+                      initialDate: _editDate ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    ).then((pickedDate) {
+                      if (pickedDate != null && pickedDate != _editDate) {
+                        setState(() {
+                          _editDate = pickedDate;
+                        });
+                      }
+                    });
                   },
-                  child: const Text('Update'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Delete the transaction from the provider
-                    Provider.of<TransactionProvider>(context, listen: false)
-                        .removeTransaction(transaction);
-                    Navigator.of(context).pop(); // Close the dialog
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Transaction deleted')),
-                    );
-                  },
-                  child: const Text('Delete'),
+                  child: Text(
+                    'Date: ${_editDate != null ? DateFormat('MMM d, yyyy').format(_editDate!) : 'Select Date'}',
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ),
               ],
-            );
-          }
-        );
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Close'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Update the transaction details
+                  final updatedTransaction = Transaction(
+                    name: _editNameController.text,
+                    amount: double.tryParse(_editAmountController.text) ?? 0.0,
+                    category: _editCategory?.name ?? '',
+                    date: _editDate ?? DateTime.now(),
+                    type: transaction.type, // Keep the original type
+                  );
+                  // Update the transaction in the provider
+                  Provider.of<TransactionProvider>(context, listen: false)
+                      .updateTransaction(transaction, updatedTransaction);
+                  Navigator.of(context).pop(); // Close the dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transaction updated')),
+                  );
+                },
+                child: const Text('Update'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Delete the transaction from the provider
+                  Provider.of<TransactionProvider>(context, listen: false)
+                      .removeTransaction(transaction);
+                  Navigator.of(context).pop(); // Close the dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transaction deleted')),
+                  );
+                },
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        });
       },
     );
   }

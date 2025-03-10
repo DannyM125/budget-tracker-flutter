@@ -12,7 +12,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Access the transaction provider
     final transactionProvider = Provider.of<TransactionProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Padding(
@@ -89,19 +89,41 @@ class HomePage extends StatelessWidget {
                     gridData: const FlGridData(show: false),
                     titlesData: FlTitlesData(
                       leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+                        sideTitles:
+                            SideTitles(showTitles: true, reservedSize: 40),
                       ),
                       rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false, reservedSize: 40),
+                        sideTitles:
+                            SideTitles(showTitles: false, reservedSize: 40),
                       ),
                       bottomTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false, reservedSize: 40),
+                        sideTitles:
+                            SideTitles(showTitles: false, reservedSize: 40),
                       ),
                       topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false, reservedSize: 40),
+                        sideTitles:
+                            SideTitles(showTitles: false, reservedSize: 40),
                       ),
                     ),
                     borderData: FlBorderData(show: true),
+                    lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                        tooltipBgColor:
+                            ColorUtils.primaryColor.withOpacity(0.8),
+                        tooltipRoundedRadius: 8,
+                        getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                          return touchedBarSpots.map((barSpot) {
+                            return LineTooltipItem(
+                              '\$${barSpot.y.toStringAsFixed(2)}',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
                     lineBarsData: [
                       LineChartBarData(
                         // Use the dynamic chart data from transaction provider

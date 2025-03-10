@@ -43,7 +43,8 @@ class Transaction {
 
 // TransactionProvider class to manage transactions
 class TransactionProvider with ChangeNotifier {
-  List<Transaction> _transactions = [ //TODO MEGH SAVE THIS IN JSON
+  List<Transaction> _transactions = [
+    //TODO MEGH SAVE THIS IN JSON
     // Initial sample data
     Transaction(
       name: 'Salary',
@@ -98,41 +99,47 @@ class TransactionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-    // Remove a transaction
+  // Remove a transaction
   void removeTransaction(Transaction transaction) {
     _transactions.removeAt(_transactions.indexOf(transaction));
     notifyListeners();
   }
 
-void deleteTransactionsByCategory(Category category) {
-  _transactions.removeWhere((transaction) => transaction.category == category.name);
-  // TODO: Save the updated transactions list to persistent storage (e.g., shared preferences, database)
-  notifyListeners();
-}
+  void deleteTransactionsByCategory(Category category) {
+    _transactions
+        .removeWhere((transaction) => transaction.category == category.name);
+    // TODO: Save the updated transactions list to persistent storage (e.g., shared preferences, database)
+    notifyListeners();
+  }
 
   // Update a transaction
-  void updateTransaction(Transaction oldTransaction, Transaction updatedTransaction) {
+  void updateTransaction(
+      Transaction oldTransaction, Transaction updatedTransaction) {
     int index = _transactions.indexOf(updatedTransaction);
     _transactions[index] = updatedTransaction;
     notifyListeners();
   }
-void updateTransactionsByCategory(String oldCategoryName, String newCategoryName) {
-  for (var transaction in _transactions) {
-    if (transaction.category == oldCategoryName) {
-      transaction.category = newCategoryName; // Update the category name for each transaction
+
+  void updateTransactionsByCategory(
+      String oldCategoryName, String newCategoryName) {
+    for (var transaction in _transactions) {
+      if (transaction.category == oldCategoryName) {
+        transaction.category =
+            newCategoryName; // Update the category name for each transaction
+      }
     }
+    notifyListeners(); // Notify listeners to refresh the UI after the update
   }
-  notifyListeners(); // Notify listeners to refresh the UI after the update
-}
 
   // Calculate current balance (modified to exclude future transactions)
   double getCurrentBalance() {
     double balance = 0.0;
     final now = DateTime.now();
-    
+
     for (var transaction in _transactions) {
       // Only consider transactions up to the current date
-      if (transaction.date.isBefore(now) || transaction.date.isAtSameMomentAs(now)) {
+      if (transaction.date.isBefore(now) ||
+          transaction.date.isAtSameMomentAs(now)) {
         if (transaction.type == 'Deposit') {
           balance += transaction.amount;
         } else {
@@ -149,43 +156,48 @@ void updateTransactionsByCategory(String oldCategoryName, String newCategoryName
   }
 
 // Get balance data for chart (modified for YTD and to exclude future transactions)
-List<FlSpot> getBalanceOverTimeData() {
-  final now = DateTime.now();
-  final startOfYear = DateTime(now.year, 1, 1, 0, 0, 0);
-  
-  // Filter transactions to only include those from start of year to now
-  final filteredTransactions = _transactions.where((transaction) => 
-    (transaction.date.isAfter(startOfYear) || transaction.date.isAtSameMomentAs(startOfYear)) &&
-    (transaction.date.isBefore(now) || transaction.date.isAtSameMomentAs(now))
-  ).toList();
-  
-  // Sort filtered transactions by date (oldest first)
-  filteredTransactions.sort((a, b) => a.date.compareTo(b.date));
+  List<FlSpot> getBalanceOverTimeData() {
+    final now = DateTime.now();
+    final startOfYear = DateTime(now.year, 1, 1, 0, 0, 0);
 
-  // If no transactions in the period, return empty list
-  if (filteredTransactions.isEmpty) {
-    return [];
-  }
+    // Filter transactions to only include those from start of year to now
+    final filteredTransactions = _transactions
+        .where((transaction) =>
+            (transaction.date.isAfter(startOfYear) ||
+                transaction.date.isAtSameMomentAs(startOfYear)) &&
+            (transaction.date.isBefore(now) ||
+                transaction.date.isAtSameMomentAs(now)))
+        .toList();
 
-  // Calculate running balance over time
-  double runningBalance = 0.0;
-  List<FlSpot> spots = [];
-  
-  for (int i = 0; i < filteredTransactions.length; i++) {
-    if (filteredTransactions[i].type == 'Deposit') {
-      runningBalance += filteredTransactions[i].amount;
-    } else {
-      runningBalance -= filteredTransactions[i].amount;
+    // Sort filtered transactions by date (oldest first)
+    filteredTransactions.sort((a, b) => a.date.compareTo(b.date));
+
+    // If no transactions in the period, return empty list
+    if (filteredTransactions.isEmpty) {
+      return [];
     }
-    spots.add(FlSpot(i.toDouble(), runningBalance));
+
+    // Calculate running balance over time
+    double runningBalance = 0.0;
+    List<FlSpot> spots = [];
+
+    for (int i = 0; i < filteredTransactions.length; i++) {
+      if (filteredTransactions[i].type == 'Deposit') {
+        runningBalance += filteredTransactions[i].amount;
+      } else {
+        runningBalance -= filteredTransactions[i].amount;
+      }
+      spots.add(FlSpot(i.toDouble(), runningBalance));
+    }
+
+    return spots;
   }
-  
-  return spots;
-}
 
   // Get transactions by type (Deposit or Withdrawal)
   List<Transaction> getTransactionsByType(String type) {
-    return _transactions.where((transaction) => transaction.type == type).toList();
+    return _transactions
+        .where((transaction) => transaction.type == type)
+        .toList();
   }
 
   // Get recurring transactions (placeholder - you'll need to implement the logic based on your needs)
