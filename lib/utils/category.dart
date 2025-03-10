@@ -12,13 +12,13 @@ class Category {
   ];
 
   Category({required this.name, required this.color});
-
+  
   // Convert to and from JSON for storage
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'color': color.value,
-      };
-
+    'name': name,
+    'color': color.value,
+  };
+  
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
       name: json['name'],
