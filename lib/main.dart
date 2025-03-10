@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'home_page.dart';
 import 'transfers_page.dart';
 import 'reports_page.dart';
@@ -111,6 +112,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
+  void _showGoogleFormPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => GoogleFormPage(
+          primaryColor: ColorUtils.primaryColorNotifier.value,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Color>(
@@ -162,6 +173,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     Navigator.pop(context);
                     // Show flashcards page
                     _showFlashcards();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.assignment),
+                  title: const Text('Google Form'),
+                  onTap: () {
+                    // Close the drawer
+                    Navigator.pop(context);
+                    // Show Google Form page
+                    _showGoogleFormPage();
                   },
                 ),
                 // Add more drawer items here if needed
@@ -228,6 +249,68 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       default:
         return 'Budget App';
     }
+  }
+}
+
+// Google Form Page with WebView
+class GoogleFormPage extends StatefulWidget {
+  final Color primaryColor;
+  
+  const GoogleFormPage({
+    Key? key,
+    required this.primaryColor,
+  }) : super(key: key);
+
+  @override
+  _GoogleFormPageState createState() => _GoogleFormPageState();
+}
+
+class _GoogleFormPageState extends State<GoogleFormPage> {
+  bool isLoading = true;
+  final String googleFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSehGev8vJLcdLm8gXi5kAUAbtd6JRUeXCubi5KfVzVkJ59nAA/viewform';
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Budget Feedback Form', style: TextStyle(color: Colors.white)),
+        backgroundColor: widget.primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(url: WebUri(googleFormUrl)),
+            initialOptions: InAppWebViewGroupOptions(
+              crossPlatform: InAppWebViewOptions(
+                useShouldOverrideUrlLoading: true,
+                mediaPlaybackRequiresUserGesture: false,
+              ),
+            ),
+            onLoadStart: (controller, url) {
+              setState(() {
+                isLoading = true;
+              });
+            },
+            onLoadStop: (controller, url) {
+              setState(() {
+                isLoading = false;
+              });
+            },
+            onConsoleMessage: (controller, consoleMessage) {
+              print("Console Message: ${consoleMessage.message}");
+            },
+          ),
+          isLoading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
+                  ),
+                )
+              : Stack(),
+        ],
+      ),
+    );
   }
 }
 
