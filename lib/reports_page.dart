@@ -20,12 +20,6 @@ class _ReportsPageState extends State<ReportsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Reports'),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        foregroundColor: Colors.black,
-      ),
       body: Consumer<TransactionProvider>(
         builder: (context, transactionProvider, child) {
           // Filter transactions based on selected period

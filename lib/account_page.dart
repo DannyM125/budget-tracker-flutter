@@ -320,12 +320,6 @@ void _deleteCategory(int index) {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Account'),
-        backgroundColor: ColorUtils.primaryColor,
-        elevation: 1,
-        foregroundColor: Colors.white,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
