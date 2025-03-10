@@ -270,9 +270,6 @@ class _GoogleFormPageState extends State<GoogleFormPage> {
   bool isLoading = true;
   final String googleFormUrl =
       'https://docs.google.com/forms/d/e/1FAIpQLSehGev8vJLcdLm8gXi5kAUAbtd6JRUeXCubi5KfVzVkJ59nAA/viewform';
-  
-  InAppWebViewController? _webViewController;
-  double _initialScale = 0.85; // Initial zoom level (85% of normal size)
 
   @override
   Widget build(BuildContext context) {
@@ -283,109 +280,22 @@ class _GoogleFormPageState extends State<GoogleFormPage> {
         backgroundColor: widget.primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0), // Add padding around the WebView
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300, width: 1.0),
-            borderRadius: BorderRadius.circular(8.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 3,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8.0),
-            child: Stack(
-              children: [
-                InAppWebView(
-                  initialUrlRequest: URLRequest(
-                    url: WebUri(googleFormUrl),
-                  ),
-                  onWebViewCreated: (controller) {
-                    _webViewController = controller;
-                  },
-                  onLoadStop: (controller, url) async {
-                    setState(() {
-                      isLoading = false;
-                    });
-                    
-                    // Set initial zoom level when page is loaded
-                    await controller.zoomBy(zoomFactor: _initialScale, animated: true);
-                    
-                    // Inject CSS to add some spacing around the form
-                    await controller.evaluateJavascript(source: '''
-                      var style = document.createElement('style');
-                      style.textContent = `
-                        body { 
-                          padding: 15px !important;
-                          background-color: #f8f9fa !important;
-                        }
-                        form {
-                          max-width: 96% !important;
-                          margin: 0 auto !important;
-                          border-radius: 8px !important;
-                          box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
-                        }
-                      `;
-                      document.head.appendChild(style);
-                    ''');
-                  },
-                  initialOptions: InAppWebViewGroupOptions(
-                    crossPlatform: InAppWebViewOptions(
-                      useShouldOverrideUrlLoading: true,
-                      mediaPlaybackRequiresUserGesture: false,
-                    ),
-                    android: AndroidInAppWebViewOptions(
-                      useHybridComposition: true,
-                    ),
-                  ),
-                ),
-                if (isLoading)
-                  Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
-                    ),
-                  ),
-              ],
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(
+              url: WebUri(googleFormUrl),
             ),
           ),
-        ),
-      ),
-      // Add zoom controls at the bottom
-      bottomNavigationBar: Container(
-        height: 56,
-        color: Colors.white,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.zoom_out),
-              onPressed: () async {
-                await _webViewController?.zoomBy(zoomFactor: 0.9, animated: true);
-              },
-            ),
-            const SizedBox(width: 16),
-            IconButton(
-              icon: const Icon(Icons.zoom_in),
-              onPressed: () async {
-                await _webViewController?.zoomBy(zoomFactor: 1.1, animated: true);
-              },
-            ),
-            const SizedBox(width: 16),
-            TextButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reset View'),
-              onPressed: () async {
-                await _webViewController?.zoomBy(zoomFactor: _initialScale, animated: true);
-              },
-            ),
-          ],
-        ),
+          isLoading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(widget.primaryColor),
+                  ),
+                )
+              : Stack(),
+        ],
       ),
     );
   }
@@ -558,7 +468,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(
+                SizedBox(
                   height: 30,
                 ),
               ],
