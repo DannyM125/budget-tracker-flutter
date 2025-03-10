@@ -53,7 +53,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   // List of all pages in the app
   final List<Widget> _pages = <Widget>[
     const HomePage(),
@@ -77,7 +77,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _showAddTransferDialog() {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController amountController = TextEditingController();
-    Category? selectedCategory = Category.getInstance().first;  // Default to the first category
+    Category? selectedCategory =
+        Category.getInstance().first; // Default to the first category
 
     showAddTransferDialog(
       context,
@@ -255,7 +256,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 // Google Form Page with WebView
 class GoogleFormPage extends StatefulWidget {
   final Color primaryColor;
-  
+
   const GoogleFormPage({
     Key? key,
     required this.primaryColor,
@@ -267,44 +268,30 @@ class GoogleFormPage extends StatefulWidget {
 
 class _GoogleFormPageState extends State<GoogleFormPage> {
   bool isLoading = true;
-  final String googleFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSehGev8vJLcdLm8gXi5kAUAbtd6JRUeXCubi5KfVzVkJ59nAA/viewform';
-  
+  final String googleFormUrl =
+      'https://docs.google.com/forms/d/e/1FAIpQLSehGev8vJLcdLm8gXi5kAUAbtd6JRUeXCubi5KfVzVkJ59nAA/viewform';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budget Feedback Form', style: TextStyle(color: Colors.white)),
+        title: const Text('Budget Feedback Form',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: widget.primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
           InAppWebView(
-            initialUrlRequest: URLRequest(url: WebUri(googleFormUrl)),
-            initialOptions: InAppWebViewGroupOptions(
-              crossPlatform: InAppWebViewOptions(
-                useShouldOverrideUrlLoading: true,
-                mediaPlaybackRequiresUserGesture: false,
-              ),
+            initialUrlRequest: URLRequest(
+              url: WebUri(googleFormUrl),
             ),
-            onLoadStart: (controller, url) {
-              setState(() {
-                isLoading = true;
-              });
-            },
-            onLoadStop: (controller, url) {
-              setState(() {
-                isLoading = false;
-              });
-            },
-            onConsoleMessage: (controller, consoleMessage) {
-              print("Console Message: ${consoleMessage.message}");
-            },
           ),
           isLoading
               ? Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(widget.primaryColor),
                   ),
                 )
               : Stack(),
@@ -316,7 +303,7 @@ class _GoogleFormPageState extends State<GoogleFormPage> {
 
 class FlashcardsPage extends StatefulWidget {
   final Color primaryColor;
-  
+
   const FlashcardsPage({
     Key? key,
     required this.primaryColor,
@@ -329,28 +316,33 @@ class FlashcardsPage extends StatefulWidget {
 class _FlashcardsPageState extends State<FlashcardsPage> {
   int _currentIndex = 0;
   bool _showAnswer = false;
-  
+
   // Sample flashcards - replace with your own content
   final List<FlashCard> _flashcards = [
     FlashCard(
       question: "What is budgeting?",
-      answer: "Budgeting is the process of creating a plan to spend your money. This spending plan is called a budget. Creating this plan allows you to determine in advance whether you will have enough money to do the things you need to do or would like to do.",
+      answer:
+          "Budgeting is the process of creating a plan to spend your money. This spending plan is called a budget. Creating this plan allows you to determine in advance whether you will have enough money to do the things you need to do or would like to do.",
     ),
     FlashCard(
       question: "What is the 50/30/20 rule?",
-      answer: "The 50/30/20 rule is a budgeting method that allocates 50% of income to needs, 30% to wants, and 20% to savings and debt repayment.",
+      answer:
+          "The 50/30/20 rule is a budgeting method that allocates 50% of income to needs, 30% to wants, and 20% to savings and debt repayment.",
     ),
     FlashCard(
       question: "What is an emergency fund?",
-      answer: "An emergency fund is money set aside for unexpected expenses such as medical bills, car repairs, or job loss. Experts recommend saving 3-6 months of living expenses.",
+      answer:
+          "An emergency fund is money set aside for unexpected expenses such as medical bills, car repairs, or job loss. Experts recommend saving 3-6 months of living expenses.",
     ),
     FlashCard(
       question: "What is the difference between fixed and variable expenses?",
-      answer: "Fixed expenses remain constant each month (rent, mortgage, car payment), while variable expenses fluctuate (groceries, utilities, entertainment).",
+      answer:
+          "Fixed expenses remain constant each month (rent, mortgage, car payment), while variable expenses fluctuate (groceries, utilities, entertainment).",
     ),
     FlashCard(
       question: "What is the envelope budgeting system?",
-      answer: "The envelope system involves dividing cash into different envelopes for various spending categories. When an envelope is empty, you stop spending in that category until the next budget period.",
+      answer:
+          "The envelope system involves dividing cash into different envelopes for various spending categories. When an envelope is empty, you stop spending in that category until the next budget period.",
     ),
   ];
 
@@ -422,8 +414,8 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          _showAnswer 
-                              ? _flashcards[_currentIndex].answer 
+                          _showAnswer
+                              ? _flashcards[_currentIndex].answer
                               : _flashcards[_currentIndex].question,
                           style: const TextStyle(fontSize: 22),
                           textAlign: TextAlign.center,
@@ -463,7 +455,9 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: _currentIndex < _flashcards.length - 1 ? _nextCard : null,
+                      onPressed: _currentIndex < _flashcards.length - 1
+                          ? _nextCard
+                          : null,
                       icon: const Icon(Icons.arrow_forward),
                       label: const Text('Next'),
                       style: ElevatedButton.styleFrom(
@@ -474,7 +468,9 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 30,),
+                SizedBox(
+                  height: 30,
+                ),
               ],
             ),
           ),
