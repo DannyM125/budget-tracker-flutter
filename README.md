@@ -1,5 +1,5 @@
 # Background Info
-This was a project created for the 2025 Coding & Programming FBLA event. After presenting our Flutter application, we were chosen to represent the state of New Jersey at the National Leadership Conference in Anaheim California.
+This was a project created for the 2025 Coding & Programming FBLA event. After presenting our Flutter application, we were chosen to represent the state of New Jersey at the 2025 National Leadership Conference in Anaheim California.
 
 # User Inferace
 ![9](https://github.com/user-attachments/assets/e940b2e6-91fd-4687-bb7c-1ed5f223eb29)
